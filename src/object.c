@@ -1,7 +1,5 @@
 #include "redis.h"
-#ifndef _WIN32
-  #include <pthread.h>
-#endif
+#include <pthread.h>
 #include <math.h>
 
 robj *createObject(int type, void *ptr) {
@@ -241,7 +239,7 @@ int isObjectRepresentableAsLongLong(robj *o, long long *llval) {
         if (llval) *llval = (long long) o->ptr;
 #else
         if (llval) *llval = (long) o->ptr;
-#endif        
+#endif
         return REDIS_OK;
     } else {
         return string2ll(o->ptr,sdslen(o->ptr),llval) ? REDIS_OK : REDIS_ERR;
@@ -396,7 +394,7 @@ int getDoubleFromObject(robj *o, double *target) {
     } else {
         redisAssert(o->type == REDIS_STRING);
         if (o->encoding == REDIS_ENCODING_RAW) {
-            value = strtod(o->ptr, &eptr);
+            value = __strtod(o->ptr, &eptr);
             if (eptr[0] != '\0' || isnan(value)) return REDIS_ERR;
         } else if (o->encoding == REDIS_ENCODING_INT) {
 #ifdef _WIN64
@@ -520,7 +518,7 @@ unsigned long long estimateObjectIdleTime(robj *o) {
                     REDIS_LRU_CLOCK_RESOLUTION;
     }
 }
-#else 
+#else
 unsigned long estimateObjectIdleTime(robj *o) {
     if (server.lruclock >= o->lru) {
         return (server.lruclock - o->lru) * REDIS_LRU_CLOCK_RESOLUTION;

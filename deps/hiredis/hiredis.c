@@ -727,7 +727,7 @@ int redisvFormatCommand(char **target, const char *format, va_list ap) {
     pos = sprintf(cmd,"*%d\r\n",argc);
     for (j = 0; j < argc; j++) {
 #ifdef _WIN32
-        pos += sprintf(cmd+pos,"$%llu\r\n",(unsigned long long)sdslen(argv[j]));
+        pos += __mingw_sprintf(cmd+pos,"$%llu\r\n",(unsigned long long)sdslen(argv[j]));
 #else
         pos += sprintf(cmd+pos,"$%zu\r\n",sdslen(argv[j]));
 #endif
@@ -790,7 +790,7 @@ int redisFormatCommandArgv(char **target, int argc, const char **argv, const siz
     for (j = 0; j < argc; j++) {
         len = argvlen ? argvlen[j] : strlen(argv[j]);
 #ifdef _WIN32
-        pos += sprintf(cmd+pos,"$%llu\r\n",(unsigned long long)len);
+        pos += __mingw_sprintf(cmd+pos,"$%llu\r\n",(unsigned long long)len);
 #else
         pos += sprintf(cmd+pos,"$%zu\r\n",len);
 #endif

@@ -3,12 +3,12 @@
 #include <fcntl.h>
 #include <math.h>
 #include <signal.h>
+#include <pthread.h>
 
 #ifdef _WIN32
   #include "win32fixes.h"
-#else
-  #include <pthread.h>
 #endif
+
 
 
 /* Virtual Memory is composed mainly of two subsystems:
@@ -885,7 +885,11 @@ void *IOThreadEntryPoint(void *arg) {
         if (listLength(server.io_newjobs) == 0) {
             /* No new jobs in queue, exit. */
             redisLog(REDIS_DEBUG,"Thread %ld exiting, nothing to do",
+#ifdef _WIN32
+                (long) pthread_self().p);
+#else
                 (long) pthread_self());
+#endif
             server.io_active_threads--;
             unlockThreadedIO();
             return NULL;
@@ -894,12 +898,22 @@ void *IOThreadEntryPoint(void *arg) {
         j = ln->value;
         listDelNode(server.io_newjobs,ln);
         /* Add the job in the processing queue */
+#ifdef _WIN32
+        j->thread.p = pthread_self().p;
+        j->thread.x = pthread_self().x;
+#else
         j->thread = pthread_self();
+#endif
         listAddNodeTail(server.io_processing,j);
         ln = listLast(server.io_processing); /* We use ln later to remove it */
         unlockThreadedIO();
+#ifdef _WIN32
+        redisLog(REDIS_DEBUG,"Thread %ld got a new job (type %d): %p about key '%s'",
+            (long) pthread_self().p, j->type, (void*)j, (char*)j->key->ptr);
+#else
         redisLog(REDIS_DEBUG,"Thread %ld got a new job (type %d): %p about key '%s'",
             (long) pthread_self(), j->type, (void*)j, (char*)j->key->ptr);
+#endif
 
         /* Process the Job */
         if (j->type == REDIS_IOJOB_LOAD) {
@@ -913,8 +927,13 @@ void *IOThreadEntryPoint(void *arg) {
         }
 
         /* Done: insert the job into the processed queue */
+#ifdef _WIN32
+        redisLog(REDIS_DEBUG,"Thread %ld completed the job: %p (key %s)",
+            (long) pthread_self().p, (void*)j, (char*)j->key->ptr);
+#else
         redisLog(REDIS_DEBUG,"Thread %ld completed the job: %p (key %s)",
             (long) pthread_self(), (void*)j, (char*)j->key->ptr);
+#endif
 
         lockThreadedIO();
         listDelNode(server.io_processing,ln);
@@ -927,73 +946,79 @@ void *IOThreadEntryPoint(void *arg) {
     return NULL; /* never reached */
 }
 
-#ifdef _WIN32
-/* Proxy structure to pass fnuc and arg to thread */
-typedef struct thread_params
-{
-    void *(*func)(void *);
-    void * arg;
-} thread_params;
-
-/* Proxy function by windows thread requirements */
-static unsigned __stdcall win32_proxy_threadproc(void *arg) {
-
-    thread_params *p = (thread_params *) arg;
-    p->func(p->arg);
-
-    /* Dealocate params */
-    zfree(p);
-
-    _endthreadex(0);
-	return 0;
-}
-
-int pthread_create(pthread_t *thread, const void *unused,
-		   void *(*start_routine)(void*), void *arg) {
-
-    REDIS_NOTUSED(unused);
-    HANDLE h;
-    thread_params *params = zmalloc(sizeof(thread_params));
-
-    params->func = start_routine;
-    params->arg  = arg;
-
-    /*  Arguments not supported in this port */
-    if (arg) exit(1);
-
-    REDIS_NOTUSED(arg);
-	h =(HANDLE) _beginthreadex(NULL,  /* Security not used */
-                               REDIS_THREAD_STACK_SIZE, /* Set custom stack size */
-                               win32_proxy_threadproc,  /* calls win32 stdcall proxy */
-                               params, /* real threadproc is passed as paremeter */
-                               STACK_SIZE_PARAM_IS_A_RESERVATION,  /* reserve stack */
-                               thread /* returned thread id */
-                );
-
-	if (!h)
-		return errno;
-
-    CloseHandle(h);
-	return 0;
-}
-#endif
+//#ifdef _WIN32
+///* Proxy structure to pass fnuc and arg to thread */
+//typedef struct thread_params
+//{
+//    void *(*func)(void *);
+//    void * arg;
+//} thread_params;
+//
+///* Proxy function by windows thread requirements */
+//static unsigned __stdcall win32_proxy_threadproc(void *arg) {
+//
+//    thread_params *p = (thread_params *) arg;
+//    p->func(p->arg);
+//
+//    /* Dealocate params */
+//    zfree(p);
+//
+//    _endthreadex(0);
+//	return 0;
+//}
+//
+//int pthread_create(pthread_t *thread, const void *unused,
+//		   void *(*start_routine)(void*), void *arg) {
+//
+//    REDIS_NOTUSED(unused);
+//    HANDLE h;
+//    thread_params *params = zmalloc(sizeof(thread_params));
+//
+//    params->func = start_routine;
+//    params->arg  = arg;
+//
+//    /*  Arguments not supported in this port */
+//    if (arg) exit(1);
+//
+//    REDIS_NOTUSED(arg);
+//	h =(HANDLE) _beginthreadex(NULL,  /* Security not used */
+//                               REDIS_THREAD_STACK_SIZE, /* Set custom stack size */
+//                               win32_proxy_threadproc,  /* calls win32 stdcall proxy */
+//                               params, /* real threadproc is passed as paremeter */
+//                               STACK_SIZE_PARAM_IS_A_RESERVATION,  /* reserve stack */
+//                               thread /* returned thread id */
+//                );
+//
+//	if (!h)
+//		return errno;
+//
+//    CloseHandle(h);
+//	return 0;
+//}
+//#endif
 
 void spawnIOThread(void) {
     pthread_t thread;
+#ifndef _WIN32
     _sigset_t mask, omask;
+#endif
     int err;
 
+#ifndef _WIN32
     sigemptyset(&mask);
     sigaddset(&mask,SIGCHLD);
     sigaddset(&mask,SIGHUP);
     sigaddset(&mask,SIGPIPE);
     pthread_sigmask(SIG_SETMASK, &mask, &omask);
+#endif
     while ((err = pthread_create(&thread,&server.io_threads_attr,IOThreadEntryPoint,NULL)) != 0) {
         redisLog(REDIS_WARNING,"Unable to spawn an I/O thread: %s",
             strerror(err));
         usleep(1000000);
     }
+#ifndef _WIN32
     pthread_sigmask(SIG_SETMASK, &omask, NULL);
+#endif
     server.io_active_threads++;
 }
 
@@ -1059,7 +1084,12 @@ int vmSwapObjectThreaded(robj *key, robj *val, redisDb *db) {
     j->id = j->val = val;
     incrRefCount(val);
     j->canceled = 0;
+#ifdef _WIN32
+    j->thread.p = (void *) -1;
+    j->thread.x = 0;
+#else
     j->thread = (pthread_t) -1;
+#endif
 
     val->storage = REDIS_VM_SWAPPING;
 
@@ -1131,7 +1161,12 @@ int waitForSwappedKey(redisClient *c, robj *key) {
         j->page = vp->page;
         j->val = NULL;
         j->canceled = 0;
+#ifdef _WIN32
+        j->thread.p = (void *) -1;
+        j->thread.x = 0;
+#else
         j->thread = (pthread_t) -1;
+#endif
 
         lockThreadedIO();
         queueIOJob(j);

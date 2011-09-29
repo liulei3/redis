@@ -30,13 +30,12 @@
 #ifdef _WIN32
   #include <inttypes.h>
   #include "win32fixes.h"
-#else
-  #include <pthread.h>
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include "config.h"
 #include "zmalloc.h"
 

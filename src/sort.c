@@ -267,7 +267,7 @@ void sortCommand(redisClient *c) {
                 if (sortby) vector[j].u.cmpobj = getDecodedObject(byval);
             } else {
                 if (byval->encoding == REDIS_ENCODING_RAW) {
-                    vector[j].u.score = strtod(byval->ptr,NULL);
+                    vector[j].u.score = __strtod(byval->ptr,NULL);
                 } else if (byval->encoding == REDIS_ENCODING_INT) {
                     /* Don't need to decode the object if it's
                      * integer-encoded (the only encoding supported) so

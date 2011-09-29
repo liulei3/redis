@@ -36,7 +36,7 @@ void stopAppendOnly(void) {
         w32CeaseAndDesist(server.bgsavechildpid);
 #else
       int statloc;
-      
+
         if (kill(server.bgrewritechildpid,SIGKILL) != -1)
             wait3(&statloc,0,NULL);
 #endif
@@ -205,13 +205,13 @@ sds catAppendOnlyExpireAtCommand(sds buf, robj *key, robj *seconds) {
 
     argv[0] = createStringObject("EXPIREAT",8);
     argv[1] = key;
-#ifdef _WIN32    
+#ifdef _WIN32
     argv[2] = createObject(REDIS_STRING,
         sdscatprintf(sdsempty(),"%lld",(long long)when));
 #else
     argv[2] = createObject(REDIS_STRING,
         sdscatprintf(sdsempty(),"%ld",when));
-#endif        
+#endif
     buf = catAppendOnlyGenericCommand(buf, argc, argv);
     decrRefCount(argv[0]);
     decrRefCount(argv[2]);
@@ -303,14 +303,14 @@ int loadAppendOnlyFile(char *filename) {
     FILE *fp = fopen(filename,"rb");
 #else
     FILE *fp = fopen(filename,"r");
-#endif    
+#endif
     struct redis_stat sb;
     int appendonly = server.appendonly;
 #ifdef _WIN64
     long long loops = 0;
 #else
     long loops = 0;
-#endif    
+#endif
 
     if (fp && redis_fstat(fileno(fp),&sb) != -1 && sb.st_size == 0) {
         server.appendonly_current_size = 0;
@@ -340,7 +340,7 @@ int loadAppendOnlyFile(char *filename) {
         int force_swapout;
 
         /* Serve the clients from time to time */
-#ifdef _WIN64        
+#ifdef _WIN64
         if (!(loops++ % (long long)1000)) {
             loadingProgress(ftello(fp));
             aeProcessEvents(server.el, AE_FILE_EVENTS|AE_DONT_WAIT);
@@ -444,12 +444,12 @@ int rewriteAppendOnlyFile(char *filename) {
     /* Note that we have to use a different temp name here compared to the
      * one used by rewriteAppendOnlyFileBackground() function. */
 #ifdef _WIN32
-    snprintf(tmpfile,256,"temp-rewriteaof-%lld.aof", (long long int) getpid());
+    __mingw_snprintf(tmpfile,256,"temp-rewriteaof-%lld.aof", (long long) getpid());
     fp = fopen(tmpfile,"wb");
-#else     
+#else
     snprintf(tmpfile,256,"temp-rewriteaof-%d.aof", (int) getpid());
     fp = fopen(tmpfile,"w");
-#endif    
+#endif
     if (!fp) {
         redisLog(REDIS_WARNING, "Failed rewriting the append only file: %s", strerror(errno));
         return REDIS_ERR;
@@ -726,7 +726,7 @@ int rewriteAppendOnlyFileBackground(void) {
             char tmpfile[256];
 
             childpid = getpid();
-            snprintf(tmpfile,256,"temp-rewriteaof-bg-%lld.aof", (long long)childpid);
+            __mingw_snprintf(tmpfile,256,"temp-rewriteaof-bg-%lld.aof", (long long)childpid);
             server.bgrewritechildpid = childpid;
             updateDictResizePolicy();
             server.appendseldb = -1;
@@ -821,11 +821,15 @@ void backgroundRewriteDoneHandler(int statloc) {
          * rewritten AOF. */
         snprintf(tmpfile,256,"temp-rewriteaof-bg-%d.aof",
             (int)server.bgrewritechildpid);
+#ifdef _WIN32
+        newfd = open(tmpfile,O_WRONLY|O_APPEND|O_CREAT|_O_BINARY,_S_IREAD|_S_IWRITE);
+#else
         newfd = open(tmpfile,O_WRONLY|O_APPEND);
+#endif
         if (newfd == -1) {
 #ifdef _WIN32
             /* Windows fix: More info */
-            redisLog(REDIS_WARNING, 
+            redisLog(REDIS_WARNING,
                 "Not able to open the temp append only file (%s) produced by the child: %s", tmpfile, strerror(errno));
 #else
             redisLog(REDIS_WARNING,
@@ -851,7 +855,7 @@ void backgroundRewriteDoneHandler(int statloc) {
             "Parent diff successfully flushed to the rewritten AOF (%lu bytes)", nwritten);
 #ifdef _WIN32
         /* Close files before renaming */
-        close(fd);
+        close(newfd);
         if (server.appendfd != -1) close(server.appendfd);
 #endif
 
@@ -888,7 +892,11 @@ void backgroundRewriteDoneHandler(int statloc) {
              /* Don't care if this fails: oldfd will be -1 and we handle that.
               * One notable case of -1 return is if the old file does
               * not exist. */
+#ifdef _WIN32
+             oldfd = open(server.appendfilename,O_RDONLY|_O_BINARY,0);
+#else
              oldfd = open(server.appendfilename,O_RDONLY|O_NONBLOCK);
+#endif
         } else {
             /* AOF enabled */
             oldfd = -1; /* We'll set this to the current AOF filedes later. */
@@ -900,23 +908,18 @@ void backgroundRewriteDoneHandler(int statloc) {
             redisLog(REDIS_WARNING,
                 "Error trying to rename the temporary AOF: %s", strerror(errno));
 #ifndef _WIN32
-            close(newfd);
-#endif
             if (oldfd != -1) close(oldfd);
+#endif
             goto cleanup;
         }
 
         if (server.appendfd == -1) {
             /* AOF disabled, we don't need to set the AOF file descriptor
              * to this new file, so we can close it. */
-#ifdef _WIN32
-            fd = open(server.appendfilename,O_WRONLY|O_APPEND|O_CREAT|_O_BINARY,_S_IREAD|_S_IWRITE);
-#else
             close(newfd);
         } else {
             /* AOF enabled, replace the old fd with the new one. */
             oldfd = server.appendfd;
-#endif
             server.appendfd = newfd;
             if (server.appendfsync == APPENDFSYNC_ALWAYS)
                 aof_fsync(newfd);
@@ -924,14 +927,11 @@ void backgroundRewriteDoneHandler(int statloc) {
                 aof_background_fsync(newfd);
             server.appendseldb = -1; /* Make sure SELECT is re-issued */
             aofUpdateCurrentSize();
-            server.auto_aofrewrite_base_size = server.appendonly_current_size;            
-#ifndef _WIN32
-
+            server.auto_aofrewrite_base_size = server.appendonly_current_size;
             /* Clear regular AOF buffer since its contents was just written to
              * the new AOF from the background rewrite buffer. */
             sdsfree(server.aofbuf);
             server.aofbuf = sdsempty();
-#endif
         }
 
         redisLog(REDIS_NOTICE, "Background AOF rewrite successful");

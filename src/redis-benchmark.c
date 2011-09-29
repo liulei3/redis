@@ -150,7 +150,7 @@ static void randomizeClientKey(client c) {
     for (i = 0; i < c->randlen; i++) {
         r = random() % config.randomkeys_keyspacelen;
 #ifdef _WIN32
-        snprintf(buf,sizeof(buf),"%012llu",(unsigned long long)r);
+        __mingw_snprintf(buf,sizeof(buf),"%012llu",(unsigned long long)r);
 #else
         snprintf(buf,sizeof(buf),"%012zu",r);
 #endif

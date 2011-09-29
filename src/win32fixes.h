@@ -11,7 +11,6 @@
   #define WIN32_LEAN_AND_MEAN
   #define NOGDI
   #define __USE_W32_SOCKETS
-  #define __MINGW_FEATURES__ 1
 
  // #define _WIN32_WINNT 0x0501
 
@@ -198,7 +197,7 @@ struct sigaction {
   #define EPROTONOSUPPORT WSAEPROTONOSUPPORT
   #define ECONNREFUSED WSAECONNREFUSED
   #define EBADFD WSAENOTSOCK
-  #define ETIMEDOUT WSAETIMEDOUT
+//  #define ETIMEDOUT WSAETIMEDOUT
   #define EOPNOTSUPP WSAEOPNOTSUPP
   #endif
 
@@ -211,44 +210,44 @@ struct sigaction {
   int replace_rename(const char *src, const char *dest);
 
   //threads avoiding pthread.h
-  #define pthread_mutex_t CRITICAL_SECTION
-  #define pthread_attr_t ssize_t
-  #define PTHREAD_MUTEX_INITIALIZER (CRITICAL_SECTION) { 0 }
-
-  #if !defined(STACK_SIZE_PARAM_IS_A_RESERVATION)
-    #define STACK_SIZE_PARAM_IS_A_RESERVATION 0x00010000
-  #endif
-
-  //#define pthread_mutex_init(a,b) (InitializeCriticalSection((a)), 0)
-  #define pthread_mutex_init(a,b) (InitializeCriticalSectionAndSpinCount((a), 0x80000400),0)
-  #define pthread_mutex_destroy(a) DeleteCriticalSection((a))
-  #define pthread_mutex_lock EnterCriticalSection
-  #define pthread_mutex_unlock LeaveCriticalSection
-  #define pthread_equal(t1, t2) ((t1) == (t2))
-
-  #define pthread_attr_init(x) (*(x) = 0)
-  #define pthread_attr_getstacksize(x, y) (*(y) = *(x))
-  #define pthread_attr_setstacksize(x, y) (*(x) = y)
-
-  #define pthread_t u_int
-
-  typedef struct {
-	  void *(*start_routine)(void*);
-	  void *arg;
-  } pthread_proxy_t;
-
-  int pthread_create(pthread_t *thread, const void *unused,
-	         		  void *(*start_routine)(void*), void *arg);
-
-  pthread_t pthread_self(void);
-
-/*
-*   static inline int pthread_exit(void *ret) {
-*	 ExitThread((DWORD)ret);
-*  }
-*/
-  int pthread_detach (pthread_t thread);
-  int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset);
+//  #define pthread_mutex_t CRITICAL_SECTION
+//  #define pthread_attr_t ssize_t
+//  #define PTHREAD_MUTEX_INITIALIZER (CRITICAL_SECTION) { 0 }
+//
+//  #if !defined(STACK_SIZE_PARAM_IS_A_RESERVATION)
+//    #define STACK_SIZE_PARAM_IS_A_RESERVATION 0x00010000
+//  #endif
+//
+//  //#define pthread_mutex_init(a,b) (InitializeCriticalSection((a)), 0)
+//  #define pthread_mutex_init(a,b) (InitializeCriticalSectionAndSpinCount((a), 0x80000400),0)
+//  #define pthread_mutex_destroy(a) DeleteCriticalSection((a))
+//  #define pthread_mutex_lock EnterCriticalSection
+//  #define pthread_mutex_unlock LeaveCriticalSection
+//  #define pthread_equal(t1, t2) ((t1) == (t2))
+//
+//  #define pthread_attr_init(x) (*(x) = 0)
+//  #define pthread_attr_getstacksize(x, y) (*(y) = *(x))
+//  #define pthread_attr_setstacksize(x, y) (*(x) = y)
+//
+//  #define pthread_t u_int
+//
+//  typedef struct {
+//	  void *(*start_routine)(void*);
+//	  void *arg;
+//  } pthread_proxy_t;
+//
+//  int pthread_create(pthread_t *thread, const void *unused,
+//	         		  void *(*start_routine)(void*), void *arg);
+//
+//  pthread_t pthread_self(void);
+//
+////
+////   static inline int pthread_exit(void *ret) {
+////	 ExitThread((DWORD)ret);
+////  }
+////
+//  int pthread_detach (pthread_t thread);
+//  int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset);
 
   /* Misc Unix -> Win32 */
   int kill(pid_t pid, int sig);

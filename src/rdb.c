@@ -6,6 +6,7 @@
 #include <sys/time.h>
 
 #ifdef _WIN32
+  #include <stdio.h>
   #include <errno.h>
   #include "win32fixes.h"
 #else
@@ -419,7 +420,7 @@ int rdbSave(char *filename) {
         waitEmptyIOJobsQueue();
 
 #ifdef _WIN32
-    snprintf(tmpfile,256,"temp-%lld.rdb", (long long int) getpid());
+    __mingw_snprintf(tmpfile,256,"temp-%lld.rdb", (long long int) getpid());
     fp = fopen(tmpfile,"wb");
 #else
     snprintf(tmpfile,256,"temp-%d.rdb", (int) getpid());

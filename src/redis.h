@@ -16,14 +16,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <pthread.h>
 
 #if defined _WIN32
-  #include <string.h>
-  #include <stdio.h>
   #include "win32fixes.h"
 #else
-  #include <pthread.h>
-  #include <syslog.h>  
+  #include <syslog.h>
 #endif
 
 
@@ -344,11 +342,11 @@ typedef struct redisClient {
     struct redisCommand *cmd;
     int reqtype;
     int multibulklen;       /* number of multi bulk arguments left to read */
-#ifdef _WIN64    
+#ifdef _WIN64
     long long bulklen;      /* length of bulk argument in multi bulk request */
 #else
     long bulklen;           /* length of bulk argument in multi bulk request */
-#endif    
+#endif
     list *reply;
     int sentlen;
     time_t lastinteraction; /* time of the last interaction, used for timeout */
@@ -361,7 +359,7 @@ typedef struct redisClient {
     long long repldboff;         /* replication DB file offset */
 #else
     long repldboff;         /* replication DB file offset */
-#endif    
+#endif
     off repldbsize;       /* replication DB file size */
     multiState mstate;      /* MULTI/EXEC state */
     blockingState bpop;   /* blocking state */
@@ -433,9 +431,9 @@ struct redisServer {
     long long slowlog_log_slower_than;
 #ifdef _WIN64
     unsigned long long slowlog_max_len;
-#else    
+#else
     unsigned long slowlog_max_len;
-#endif    
+#endif
     /* Configuration */
     int verbosity;
     int maxidletime;
@@ -579,9 +577,9 @@ struct redisFunctionSym {
     char *name;
 #ifdef _WIN32
     size_t pointer;
-#else    
+#else
     unsigned long pointer;
-#endif    
+#endif
 };
 
 typedef struct _redisSortObject {
@@ -739,7 +737,7 @@ void getClientsMaxBuffers(unsigned long long *longest_output_list,
 #else
 void getClientsMaxBuffers(unsigned long *longest_output_list,
                           unsigned long *biggest_input_buffer);
-#endif                          
+#endif
 void rewriteClientCommandVector(redisClient *c, int argc, ...);
 
 #ifdef _WIN32

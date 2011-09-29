@@ -387,11 +387,11 @@ static int zslParseRange(robj *min, robj *max, zrangespec *spec) {
 #endif
     } else {
         if (((char*)min->ptr)[0] == '(') {
-            spec->min = strtod((char*)min->ptr+1,&eptr);
+            spec->min = __strtod((char*)min->ptr+1,&eptr);
             if (eptr[0] != '\0' || isnan(spec->min)) return REDIS_ERR;
             spec->minex = 1;
         } else {
-            spec->min = strtod((char*)min->ptr,&eptr);
+            spec->min = __strtod((char*)min->ptr,&eptr);
             if (eptr[0] != '\0' || isnan(spec->min)) return REDIS_ERR;
         }
     }
@@ -403,11 +403,11 @@ static int zslParseRange(robj *min, robj *max, zrangespec *spec) {
 #endif
     } else {
         if (((char*)max->ptr)[0] == '(') {
-            spec->max = strtod((char*)max->ptr+1,&eptr);
+            spec->max = __strtod((char*)max->ptr+1,&eptr);
             if (eptr[0] != '\0' || isnan(spec->max)) return REDIS_ERR;
             spec->maxex = 1;
         } else {
-            spec->max = strtod((char*)max->ptr,&eptr);
+            spec->max = __strtod((char*)max->ptr,&eptr);
             if (eptr[0] != '\0' || isnan(spec->max)) return REDIS_ERR;
         }
     }
@@ -432,7 +432,7 @@ double zzlGetScore(unsigned char *sptr) {
     if (vstr) {
         memcpy(buf,vstr,vlen);
         buf[vlen] = '\0';
-        score = strtod(buf,NULL);
+        score = __strtod(buf,NULL);
     } else {
         score = vlong;
     }

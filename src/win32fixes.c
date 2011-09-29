@@ -164,32 +164,32 @@ int replace_rename(const char *src, const char *dst) {
     }
 }
 
-/* Noop in windows */
-int pthread_detach (pthread_t thread) {
-    REDIS_NOTUSED(thread);
-    return 0; /* noop */
-  }
-
-pthread_t pthread_self(void) {
-	return GetCurrentThreadId();
-}
-
-int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
-    REDIS_NOTUSED(set);
-    REDIS_NOTUSED(oset);
-    switch (how) {
-      case SIG_BLOCK:
-      case SIG_UNBLOCK:
-      case SIG_SETMASK:
-           break;
-      default:
-            errno = EINVAL;
-            return -1;
-    }
-
-  errno = ENOSYS;
-  return -1;
-}
+///* Noop in windows */
+//int pthread_detach (pthread_t thread) {
+//    REDIS_NOTUSED(thread);
+//    return 0; /* noop */
+//  }
+//
+//pthread_t pthread_self(void) {
+//	return GetCurrentThreadId();
+//}
+//
+//int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset) {
+//    REDIS_NOTUSED(set);
+//    REDIS_NOTUSED(oset);
+//    switch (how) {
+//      case SIG_BLOCK:
+//      case SIG_UNBLOCK:
+//      case SIG_SETMASK:
+//           break;
+//      default:
+//            errno = EINVAL;
+//            return -1;
+//    }
+//
+//  errno = ENOSYS;
+//  return -1;
+//}
 
 /* Redis forks to perform backgroud writnig */
 /* fork() on unix will split process in two */

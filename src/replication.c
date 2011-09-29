@@ -525,7 +525,7 @@ void syncWithMaster(aeEventLoop *el, int fd, void *privdata, int mask) {
     /* Prepare a suitable temp file for bulk transfer */
     while(maxtries--) {
 #ifdef _WIN32
-        snprintf(tmpfile,256,
+        __mingw_snprintf(tmpfile,256,
             "temp-%lld.%lld.rdb",(long long)time(NULL),(long long)getpid());
         dfd = open(tmpfile,O_CREAT|O_WRONLY|O_EXCL|O_BINARY,_S_IREAD|_S_IWRITE);
 #else

@@ -39,12 +39,10 @@
 #include <signal.h>
 
 #ifdef _WIN32
-  #include <stdlib.h>
   #include <string.h>
-  #include <errno.h>
   #include <stdio.h>
   #include <locale.h>
-  #include <fcntl.h>
+  #include <pthread.h>
   #include "win32fixes.h"
   #define LOG_LOCAL0 0
 #else
@@ -52,7 +50,6 @@
   #include <arpa/inet.h>
   #include <sys/resource.h>
   #include <sys/uio.h>
-  #include <pthread.h>
 #endif
 
 #include <errno.h>
@@ -522,7 +519,7 @@ void activeExpireCycle(void) {
         do {
 #ifdef _WIN64
             long long num = dictSize(db->expires);
-#else            
+#else
             long num = dictSize(db->expires);
 #endif
             time_t now = time(NULL);
@@ -1335,11 +1332,11 @@ sds genRedisInfoString(void) {
         "redis_git_dirty:%d\r\n"
         "arch_bits:%s\r\n"
         "multiplexing_api:%s\r\n"
-#ifdef _WIN64        
+#ifdef _WIN64
         "process_id:%lld\r\n"
 #else
         "process_id:%ld\r\n"
-#endif        
+#endif
         "uptime_in_seconds:%ld\r\n"
         "uptime_in_days:%ld\r\n"
         "lru_clock:%ld\r\n"
@@ -1356,7 +1353,7 @@ sds genRedisInfoString(void) {
         "used_memory:%llu\r\n"
         "used_memory_human:%s\r\n"
         "used_memory_rss:%llu\r\n"
-        "used_memory_peak:%llu\r\n"        
+        "used_memory_peak:%llu\r\n"
 #else
         "client_longest_output_list:%lu\r\n"
         "client_biggest_input_buf:%lu\r\n"
@@ -1395,11 +1392,11 @@ sds genRedisInfoString(void) {
         (sizeof(long) == 8) ? "64" : "32",
 #endif
         aeGetApiName(),
-#ifdef _WIN64        
+#ifdef _WIN64
         (long long) getpid(),
 #else
         (long) getpid(),
-#endif        
+#endif
         #ifdef _WIN32
             (long)uptime,
             (long)(uptime/(3600*24)),
@@ -1410,8 +1407,8 @@ sds genRedisInfoString(void) {
             (float)c_ru.ru_stime.tv_sec+(float)c_ru.ru_stime.tv_usec/1000000,
             listLength(server.clients)-listLength(server.slaves),
             listLength(server.slaves),
-            (unsigned long long)lol, 
-            (unsigned long long)bib,            
+            (unsigned long long)lol,
+            (unsigned long long)bib,
             server.bpop_blocked_clients,
             (unsigned long long) zmalloc_used_memory(),
             hmem,
@@ -1434,7 +1431,7 @@ sds genRedisInfoString(void) {
             (long long) server.stat_keyspace_misses,
             (long) dictSize(server.pubsub_channels),
             (unsigned int)listLength(server.pubsub_patterns),
-            (long long)server.stat_fork_time,            
+            (long long)server.stat_fork_time,
             (int) (server.vm_enabled != 0),
             server.masterhost == 0 ? "master" : "slave"
         #else
@@ -1516,7 +1513,7 @@ sds genRedisInfoString(void) {
                 ,(long)server.repl_transfer_left,
                 (int)(time(NULL)-server.repl_transfer_lastio)
             );
-#endif            
+#endif
         }
 
         if (server.replstate != REDIS_REPL_CONNECTED) {
@@ -1767,9 +1764,9 @@ void createPidFile(void) {
     if (fp) {
 #ifdef _WIN64
         fprintf(fp,"%lld\n",(long long int)getpid());
-#else        
+#else
         fprintf(fp,"%d\n",(int)getpid());
-#endif        
+#endif
         fclose(fp);
     }
 }

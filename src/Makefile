@@ -41,9 +41,9 @@ ifeq ($(uname_S),SunOS)
   DEBUG?=-g -ggdb
 else
   ifeq ($(osname),MINGW32_NT)
-    CFLAGS?= -std=gnu99 -pedantic $(OPTIMIZATION) -Wall -W $(ARCH) $(PROF)
-    CCLINK?= --stack=4194304 -mthreads
-    LIBS?= -lws2_32
+    CFLAGS?= -std=gnu99 -pedantic $(OPTIMIZATION) -Wall -D__USE_MINGW_ANSI_STDIO=1 -W $(ARCH) $(PROF)
+    CCLINK?=  -mthreads
+    LIBS?= -lpthread -lws2_32 -lmingwex
     DEBUG?= -g -ggdb 
     CC=gcc
   else
